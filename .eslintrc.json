@@ -1,0 +1,14 @@
+{
+  "root": true,
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "supabase/functions/**/*",
+    "supabase/tsconfig.json",
+    "tsconfig.app.json"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "typescript-config/strict": "off"
+  }
+}
