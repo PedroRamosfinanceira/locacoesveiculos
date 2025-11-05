@@ -14,6 +14,7 @@ import Vehicles from "./pages/Vehicles";
 import VehicleInvestmentWizard from "./pages/VehicleInvestmentWizard";
 import VehicleDetails from "./pages/VehicleDetails";
 import Clients from "./pages/Clients";
+import ClientDetails from "./pages/ClientDetails";
 import Contracts from "./pages/Contracts";
 import Financial from "./pages/Financial";
 import ROI from "./pages/ROI";
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/vehicles/new" element={<ProtectedRoute><VehicleInvestmentWizard /></ProtectedRoute>} />
             <Route path="/vehicles/:id" element={<ProtectedRoute><VehicleDetails /></ProtectedRoute>} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/clients/:id" element={<ProtectedRoute><ClientDetails /></ProtectedRoute>} />
             <Route path="/proposals" element={<ProtectedRoute><ProposalPage /></ProtectedRoute>} />
             <Route path="/contracts" element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
             <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />

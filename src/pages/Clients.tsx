@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClients, useCreateClient, useUpdateClient, useDeleteClient, Client } from '@/hooks/useClients';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, User } from 'lucide-react';
+import { Plus, User, Eye } from 'lucide-react';
 import { SortDropdown } from '@/components/common/SortDropdown';
 import { SearchDropdown } from '@/components/common/SearchDropdown';
 import { ActionButtons } from '@/components/common/ActionButtons';
@@ -34,7 +35,8 @@ const sortOptions = [
 ];
 
 export default function Clients() {
-  const { tenantId, hasPermission } = useAuth();
+  const navigate = useNavigate();
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -45,100 +47,42 @@ export default function Clients() {
   
   const [formData, setFormData] = useState({
     name: '',
+    cpf_cnpj: '',
     email: '',
     phone: '',
-    document: '',
   });
 
-  const { data: clients, isLoading } = useQuery({
-    queryKey: ['clients', tenantId, sortBy],
-    queryFn: async () => {
-      const [field, direction] = sortBy.split('_');
-      const { data, error } = await supabase
-        .from('locacoes_veicular_clients')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order(field, { ascending: direction === 'asc' });
-      
-      if (error) throw error;
-      return data as Client[];
-    },
-    enabled: !!tenantId,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const { error } = await supabase
-        .from('locacoes_veicular_clients')
-        .insert([{ ...data, tenant_id: tenantId }]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente cadastrado com sucesso');
-      setDialogOpen(false);
-      resetForm();
-    },
-    onError: (error) => {
-      console.error('Error creating client:', error);
-      toast.error('Erro ao cadastrar cliente');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
-      const { error } = await supabase
-        .from('locacoes_veicular_clients')
-        .update(data)
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente atualizado com sucesso');
-      setDialogOpen(false);
-      setEditingClient(null);
-      resetForm();
-    },
-    onError: (error) => {
-      console.error('Error updating client:', error);
-      toast.error('Erro ao atualizar cliente');
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('locacoes_veicular_clients')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente excluído com sucesso');
-    },
-    onError: (error) => {
-      console.error('Error deleting client:', error);
-      toast.error('Erro ao excluir cliente');
-    },
-  });
+  const { data: clients, isLoading } = useClients(sortBy);
+  const createMutation = useCreateClient();
+  const updateMutation = useUpdateClient();
+  const deleteMutation = useDeleteClient();
 
   const resetForm = () => {
     setFormData({
       name: '',
+      cpf_cnpj: '',
       email: '',
       phone: '',
-      document: '',
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingClient) {
-      updateMutation.mutate({ id: editingClient.id, data: formData });
+      updateMutation.mutate({ id: editingClient.id, data: formData }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setEditingClient(null);
+          resetForm();
+        }
+      });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(formData, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          resetForm();
+        }
+      });
     }
   };
 
@@ -146,9 +90,9 @@ export default function Clients() {
     setEditingClient(client);
     setFormData({
       name: client.name,
-      email: client.email,
-      phone: client.phone,
-      document: client.document,
+      cpf_cnpj: client.cpf_cnpj,
+      email: client.email || '',
+      phone: client.phone || '',
     });
     setDialogOpen(true);
   };
@@ -168,9 +112,9 @@ export default function Clients() {
     if (!viewingClient) return {};
     return {
       Nome: viewingClient.name,
-      Email: viewingClient.email,
-      Telefone: viewingClient.phone,
-      Documento: viewingClient.document,
+      'CPF/CNPJ': viewingClient.cpf_cnpj,
+      Email: viewingClient.email || '-',
+      Telefone: viewingClient.phone || '-',
       'Criado em': new Date(viewingClient.created_at).toLocaleDateString('pt-BR'),
     };
   }, [viewingClient]);
@@ -186,13 +130,13 @@ export default function Clients() {
           <div className="flex gap-2">
             <SearchDropdown
               items={clients || []}
-              searchFields={['name', 'email', 'document']}
+              searchFields={['name', 'email', 'cpf_cnpj']}
               onSelect={handleView}
               placeholder="Buscar cliente..."
               renderItem={(client) => (
                 <div>
                   <div className="font-medium">{client.name}</div>
-                  <div className="text-sm text-muted-foreground">{client.email}</div>
+                  <div className="text-sm text-muted-foreground">{client.cpf_cnpj}</div>
                 </div>
               )}
             />
@@ -223,19 +167,32 @@ export default function Clients() {
                 <CardContent className="space-y-2">
                   <div className="space-y-1 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Email</p>
-                      <p className="font-medium">{client.email}</p>
+                      <p className="text-muted-foreground">CPF/CNPJ</p>
+                      <p className="font-medium">{client.cpf_cnpj}</p>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Telefone</p>
-                      <p className="font-medium">{client.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Documento</p>
-                      <p className="font-medium">{client.document}</p>
-                    </div>
+                    {client.email && (
+                      <div>
+                        <p className="text-muted-foreground">Email</p>
+                        <p className="font-medium">{client.email}</p>
+                      </div>
+                    )}
+                    {client.phone && (
+                      <div>
+                        <p className="text-muted-foreground">Telefone</p>
+                        <p className="font-medium">{client.phone}</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="pt-4">
+                  <div className="pt-4 space-y-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => navigate(`/clients/${client.id}`)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Ver Detalhes
+                    </Button>
                     <ActionButtons
                       onView={() => handleView(client)}
                       onEdit={() => handleEdit(client)}
@@ -293,11 +250,12 @@ export default function Clients() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="document">Documento</Label>
+                <Label htmlFor="cpf_cnpj">CPF/CNPJ</Label>
                 <Input
-                  id="document"
-                  value={formData.document}
-                  onChange={(e) => setFormData({ ...formData, document: e.target.value })}
+                  id="cpf_cnpj"
+                  value={formData.cpf_cnpj}
+                  onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })}
+                  required
                 />
               </div>
               <DialogFooter>
