@@ -77,7 +77,7 @@ export const Integrations = () => {
           provider: integration.provider,
           channel: integration.provider === 'asaas' ? 'email' : integration.provider, // map provider to channel
           to: profile?.phone || profile?.email || 'test@example.com', // fallback to user contact
-          message: `🧪 Teste de integração ${integration.name || integration.provider}!\n\nSe você recebeu esta mensagem, a integração está funcionando corretamente! ✅`,
+          message: `Teste de integração ${integration.name || integration.provider}.\n\nSe você recebeu esta mensagem, a integração está funcionando corretamente.`,
           templateType: 'test',
         },
       });
@@ -86,10 +86,10 @@ export const Integrations = () => {
       return data;
     },
     onSuccess: () => {
-      toast.success('✅ Mensagem de teste enviada com sucesso! Verifique seu WhatsApp/Email/SMS.');
+      toast.success('Mensagem de teste enviada com sucesso. Verifique seu WhatsApp/Email/SMS.');
     },
     onError: (err: Error) => {
-      toast.error('❌ Erro ao testar integração: ' + (err?.message || String(err)));
+      toast.error('Erro ao testar integração: ' + (err?.message || String(err)));
     },
   });
 

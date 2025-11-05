@@ -129,7 +129,7 @@ const SaaSDashboard = () => {
         {/* Header */}
         <div>
           <h1 className="text-4xl font-bold gradient-text mb-2">
-            🎛️ Painel SaaS Admin
+            Painel Administrativo SaaS
           </h1>
           <p className="text-muted-foreground">
             Visão global de todas as empresas do sistema

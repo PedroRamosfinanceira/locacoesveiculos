@@ -1,3 +1,101 @@
+# Guia de Implementação - Venda de Veículos com Contas Bancárias
+
+## 📋 Resumo
+Esta implementação adiciona:
+- ✅ Sistema de contas bancárias
+- ✅ Venda de veículos com registro financeiro completo
+- ✅ Crédito automático em conta bancária
+- ✅ Cancelamento opcional de parcelas pendentes
+- ✅ Cálculo automático de lucro/prejuízo
+
+## 🔧 Passo 1: Executar Migration no Supabase
+
+### 1.1 Acesse o Supabase Dashboard
+1. Vá para: https://supabase.com/dashboard
+2. Selecione seu projeto
+3. No menu lateral, clique em **SQL Editor**
+
+### 1.2 Execute a Migration
+1. Copie **TODO O CONTEÚDO** do arquivo:
+   ```
+   supabase/migrations/20251104180000_sell_vehicle_complete.sql
+   ```
+
+2. Cole no SQL Editor do Supabase
+
+3. Clique em **Run** (ou pressione `Ctrl+Enter`)
+
+4. **Resultado esperado:**
+   ```
+   Success. No rows returned
+   ```
+
+### 1.3 Verifique a Instalação
+Execute este SQL para confirmar:
+
+```sql
+-- Verificar tabela de contas bancárias
+SELECT COUNT(*) as contas FROM locacoes_veicular_bank_accounts;
+
+-- Verificar função de venda
+SELECT proname FROM pg_proc WHERE proname = 'sell_vehicle_complete';
+
+-- Resultado esperado:
+-- contas: 0 (tabela vazia mas criada)
+-- proname: sell_vehicle_complete
+```
+
+## 🏦 Passo 2: Criar Contas Bancárias Padrão
+
+### 2.1 Encontre seu Tenant ID
+```sql
+SELECT id, name FROM tenants;
+```
+
+### 2.2 Crie as Contas Padrão
+**Substitua `SEU_TENANT_ID_AQUI` pelo ID encontrado acima:**
+
+```sql
+SELECT create_default_bank_accounts('SEU_TENANT_ID_AQUI');
+```
+
+### 2.3 Verifique as Contas Criadas
+```sql
+SELECT 
+  name,
+  bank_name,
+  account_type,
+  balance,
+  is_active
+FROM locacoes_veicular_bank_accounts
+WHERE tenant_id = 'SEU_TENANT_ID_AQUI';
+```
+
+**Resultado esperado (3 contas):**
+```
+name              | bank_name | account_type | balance | is_active
+------------------+-----------+--------------+---------+----------
+Conta Corrente    | NULL      | corrente     | 0.00    | true
+Poupança          | NULL      | poupanca     | 0.00    | true
+Caixa             | NULL      | corrente     | 0.00    | true
+```
+
+## 🎨 Passo 3: Atualizar Interface (Frontend)
+
+### 3.1 Backup do arquivo atual
+```powershell
+Copy-Item "src\components\vehicles\SellVehicleDialog.tsx" "src\components\vehicles\SellVehicleDialog.tsx.bak"
+```
+
+### 3.2 Substituir o conteúdo
+Abra o arquivo:
+```
+src/components/vehicles/SellVehicleDialog.tsx
+```
+
+**Substitua TODO O CONTEÚDO** por:
+
+```tsx
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -122,7 +220,7 @@ export const SellVehicleDialog = ({ vehicle, isOpen, onClose }: SellVehicleDialo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Vender Veículo</DialogTitle>
         </DialogHeader>
@@ -228,7 +326,7 @@ export const SellVehicleDialog = ({ vehicle, isOpen, onClose }: SellVehicleDialo
                 ))}
               </SelectContent>
             </Select>
-            {selectedAccount && saleValue && (
+            {selectedAccount && (
               <p className="text-xs text-muted-foreground">
                 Novo saldo: R$ {((selectedAccount.balance || 0) + parseFloat(saleValue || '0')).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
@@ -304,3 +402,182 @@ export const SellVehicleDialog = ({ vehicle, isOpen, onClose }: SellVehicleDialo
     </Dialog>
   );
 };
+```
+
+## ✅ Passo 4: Testar a Implementação
+
+### 4.1 Preparar Ambiente de Teste
+1. Certifique-se de ter pelo menos 1 veículo cadastrado
+2. Verifique que as contas bancárias foram criadas (Passo 2.3)
+
+### 4.2 Executar Teste de Venda
+
+**Cenário 1: Venda simples sem parcelas**
+1. Vá para página de Veículos
+2. Clique em "Vender Veículo" em qualquer veículo
+3. Preencha:
+   - Valor de Venda: R$ 50.000,00
+   - Data: hoje
+   - Conta: Conta Corrente
+4. Clique em "Confirmar Venda"
+5. **Resultado esperado:**
+   - Toast de sucesso
+   - Veículo com status "vendido"
+   - Receita criada no financeiro
+   - Saldo da Conta Corrente aumentou
+
+**Cenário 2: Venda com parcelas pendentes**
+1. Tenha um veículo com parcelas pendentes (use aquisição parcelada)
+2. Click em "Vender Veículo"
+3. Preencha os dados
+4. **Verifique:** Alerta amarelo mostrando parcelas pendentes
+5. Marque "Excluir parcelas pendentes após a venda"
+6. Confirme
+7. **Resultado esperado:**
+   - Venda concluída
+   - Parcelas futuras excluídas
+   - Lucro/prejuízo calculado
+
+### 4.3 Validar Dados no Banco
+
+```sql
+-- Ver transação de venda
+SELECT 
+  type,
+  description,
+  amount,
+  status,
+  bank_account_id
+FROM locacoes_veicular_transactions
+WHERE vehicle_id = 'ID_DO_VEICULO_VENDIDO'
+ORDER BY created_at DESC
+LIMIT 5;
+
+-- Ver saldo atualizado da conta
+SELECT 
+  name,
+  balance
+FROM locacoes_veicular_bank_accounts
+WHERE id = 'ID_DA_CONTA_SELECIONADA';
+
+-- Ver status do veículo
+SELECT 
+  plate,
+  status
+FROM locacoes_veicular_vehicles
+WHERE id = 'ID_DO_VEICULO_VENDIDO';
+```
+
+## 🎯 O que foi Implementado
+
+### Tabela: `locacoes_veicular_bank_accounts`
+- **Campos:**
+  - `id` (UUID, PK)
+  - `tenant_id` (UUID, FK → tenants)
+  - `name` (TEXT) - Nome da conta
+  - `bank_name` (TEXT, opcional) - Nome do banco
+  - `account_type` (TEXT) - 'corrente', 'poupanca', 'investimento'
+  - `balance` (NUMERIC) - Saldo atual
+  - `is_active` (BOOLEAN) - Conta ativa?
+  - `created_at`, `updated_at`
+
+### Função: `sell_vehicle_complete()`
+**Parâmetros:**
+- `p_vehicle_id` - ID do veículo a vender
+- `p_sale_value` - Valor de venda
+- `p_sale_date` - Data da venda
+- `p_bank_account_id` - Conta para creditar (opcional)
+- `p_cancel_pending_installments` - Excluir parcelas? (boolean)
+
+**O que ela faz:**
+1. ✅ Valida ownership do tenant
+2. ✅ Verifica se veículo existe
+3. ✅ Impede venda se houver contrato ativo
+4. ✅ Atualiza status do veículo para 'vendido'
+5. ✅ Cria receita de venda (paga)
+6. ✅ Credita valor na conta bancária
+7. ✅ Exclui parcelas futuras (se solicitado)
+8. ✅ Cria transação de lucro/prejuízo
+9. ✅ Retorna JSON com resultado completo
+
+### Interface Atualizada
+- ✅ Dropdown de seleção de conta bancária
+- ✅ Preview de saldo antes/depois
+- ✅ Alerta de parcelas pendentes
+- ✅ Checkbox para excluir parcelas
+- ✅ Cálculo visual de lucro/prejuízo
+- ✅ Mensagens de erro/sucesso com toast
+
+## 🐛 Troubleshooting
+
+### Erro: "function sell_vehicle_complete does not exist"
+**Solução:** Execute a migration no Supabase Dashboard (Passo 1)
+
+### Erro: "relation locacoes_veicular_bank_accounts does not exist"
+**Solução:** Execute a migration no Supabase Dashboard (Passo 1)
+
+### Contas não aparecem no dropdown
+**Solução:** Execute o Passo 2.2 para criar contas padrão
+
+### Erro: "não é possível vender veículo com contrato ativo"
+**Ação:** Finalize o contrato antes de vender o veículo
+
+### Frontend não atualiza após venda
+**Solução:** Verifique se useQuery está invalidando corretamente:
+```tsx
+queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+queryClient.invalidateQueries({ queryKey: ["transactions"] });
+queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
+```
+
+## 📊 Próximos Passos (Opcional)
+
+### Página de Gestão de Contas Bancárias
+Criar `src/pages/BankAccounts.tsx` com:
+- Lista de todas as contas
+- Adicionar nova conta
+- Editar conta existente
+- Desativar conta
+- Histórico de transações por conta
+
+### Dashboard com Saldos
+Adicionar widget no Dashboard mostrando:
+- Total em contas bancárias
+- Saldo por conta
+- Movimentações recentes
+
+### Transferências entre Contas
+Função para transferir valores entre contas:
+```sql
+transfer_between_accounts(
+  from_account_id,
+  to_account_id,
+  amount,
+  description
+)
+```
+
+---
+
+## 📝 Resumo da Implementação
+
+✅ **Criado:**
+- Tabela `locacoes_veicular_bank_accounts`
+- Função `sell_vehicle_complete()`
+- Função `create_default_bank_accounts()`
+- RLS policies (4 políticas)
+- Interface completa de venda
+
+✅ **Atualizado:**
+- `locacoes_veicular_transactions` (adicionada coluna `bank_account_id`)
+- `SellVehicleDialog.tsx` (nova versão com contas bancárias)
+
+✅ **Funcionalidades:**
+- Venda de veículo com baixa no estoque
+- Registro automático de receita
+- Crédito em conta bancária escolhida
+- Cancelamento opcional de parcelas futuras
+- Cálculo de lucro/prejuízo
+- Interface profissional e intuitiva
+
+**Tempo estimado de implementação: 15-20 minutos**

@@ -5,10 +5,20 @@
     "node_modules",
     "supabase/functions/**/*",
     "supabase/tsconfig.json",
-    "tsconfig.app.json"
+    "tsconfig.*.json",
+    "*.config.js",
+    "*.config.ts"
   ],
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
     "typescript-config/strict": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["tsconfig*.json", "supabase/tsconfig.json"],
+      "rules": {
+        "typescript-config/strict": "off"
+      }
+    }
+  ]
 }

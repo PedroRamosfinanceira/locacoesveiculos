@@ -5,6 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   LayoutDashboard,
   Car,
   Users,
@@ -20,6 +25,9 @@ import {
   Wrench,
   BarChart3,
   Brain,
+  ChevronDown,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -31,6 +39,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const { user, profile, tenantId, isSaasAdmin, email, signOut, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   // Buscar dados do tenant para logo e nome
   const { data: tenant } = useQuery({
@@ -47,29 +56,32 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     enabled: !!tenantId,
   });
 
-  const menuItems = [
+  // Verificar se é admin (pode ver dados financeiros)
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || isSaasAdmin;
+
+  // Menu operacional (todos os usuários)
+  const operationalMenuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Car, label: "Veículos", path: "/vehicles" },
     { icon: Users, label: "Clientes", path: "/clients" },
+    { icon: Car, label: "Veículos", path: "/vehicles" },
+    { icon: Sparkles, label: "Propostas", path: "/proposals" },
     { icon: FileText, label: "Contratos", path: "/contracts" },
+    { icon: Wrench, label: "Manutenções", path: "/maintenance" },
+  ];
+
+  // Menu administrativo (apenas admins)
+  const adminMenuItems = [
     { icon: DollarSign, label: "Financeiro", path: "/financial" },
     { icon: TrendingUp, label: "ROI da Frota", path: "/roi" },
     { icon: Brain, label: "Predições IA", path: "/ai-predictions" },
-    { icon: Wrench, label: "Manutenções", path: "/maintenance" },
     { icon: BarChart3, label: "Relatórios", path: "/reports" },
-    { icon: Settings, label: "Configurações", path: "/settings" },
   ];
 
   // Verificação dupla: flag + email específico do Pedro
   const isPedroSaasAdmin = isSaasAdmin && email === 'pedrohenrique@ramosfinanceira.com.br';
-  
-  if (isPedroSaasAdmin) {
-    menuItems.push({
-      icon: Shield,
-      label: "Admin SaaS",
-      path: "/admin",
-    });
-  }
+
+  // Checar se algum item do submenu admin está ativo
+  const isAdminPathActive = adminMenuItems.some(item => location.pathname === item.path);
 
   if (!user && !loading) {
     navigate("/auth");
@@ -110,8 +122,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </div>
         </div>
 
-        <nav className="p-4 space-y-2">
-          {menuItems.map((item) => {
+        <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
+          {/* Menu Operacional */}
+          {operationalMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
 
@@ -123,16 +136,118 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               >
                 <Button
                   variant={isActive ? "default" : "ghost"}
-                  className={`w-full justify-start ${
-                    isActive ? "glow-primary" : "hover:glass"
+                  className={`w-full justify-start group transition-all duration-300 ${
+                    isActive
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                      : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-950/50 dark:hover:to-purple-950/50"
                   }`}
                 >
-                  <Icon className="mr-3 h-5 w-5" />
+                  <Icon
+                    className={`mr-3 h-5 w-5 transition-transform group-hover:scale-110 ${
+                      isActive ? "animate-pulse" : ""
+                    }`}
+                  />
                   {item.label}
                 </Button>
               </Link>
             );
           })}
+
+          {/* Menu Administrativo (apenas para admins) */}
+          {isAdmin && (
+            <>
+              <div className="my-4 border-t border-gray-200 dark:border-gray-700" />
+              
+              <Collapsible open={adminMenuOpen} onOpenChange={setAdminMenuOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start group transition-all duration-300 ${
+                      isAdminPathActive
+                        ? "bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/50 dark:to-red-950/50 text-orange-600 dark:text-orange-400"
+                        : "hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 dark:hover:from-orange-950/50 dark:hover:to-red-950/50"
+                    }`}
+                  >
+                    <Shield className="mr-3 h-5 w-5 transition-transform group-hover:scale-110" />
+                    <span className="flex-1 text-left">Administrativo</span>
+                    {adminMenuOpen ? (
+                      <ChevronDown className="h-4 w-4 transition-transform" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 transition-transform" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent className="space-y-1 mt-1">
+                  {adminMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <Button
+                          variant={isActive ? "default" : "ghost"}
+                          className={`w-full justify-start pl-12 group transition-all duration-300 ${
+                            isActive
+                              ? "bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg"
+                              : "hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 dark:hover:from-orange-950/50 dark:hover:to-red-950/50"
+                          }`}
+                          size="sm"
+                        >
+                          <Icon
+                            className={`mr-3 h-4 w-4 transition-transform group-hover:scale-110 ${
+                              isActive ? "animate-pulse" : ""
+                            }`}
+                          />
+                          {item.label}
+                        </Button>
+                      </Link>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            </>
+          )}
+
+          {/* SaaS Admin (apenas Pedro) */}
+          {isPedroSaasAdmin && (
+            <>
+              <div className="my-4 border-t border-gray-200 dark:border-gray-700" />
+              <Link to="/saas" onClick={() => setSidebarOpen(false)}>
+                <Button
+                  variant={location.pathname === "/saas" ? "default" : "ghost"}
+                  className={`w-full justify-start group transition-all duration-300 ${
+                    location.pathname === "/saas"
+                      ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
+                      : "hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-950/50 dark:hover:to-emerald-950/50"
+                  }`}
+                >
+                  <Shield className="mr-3 h-5 w-5 transition-transform group-hover:scale-110" />
+                  Admin SaaS
+                </Button>
+              </Link>
+            </>
+          )}
+
+          {/* Configurações */}
+          <div className="my-4 border-t border-gray-200 dark:border-gray-700" />
+          <Link to="/settings" onClick={() => setSidebarOpen(false)}>
+            <Button
+              variant={location.pathname === "/settings" ? "default" : "ghost"}
+              className={`w-full justify-start group transition-all duration-300 ${
+                location.pathname === "/settings"
+                  ? "bg-gradient-to-r from-gray-600 to-slate-600 text-white shadow-lg"
+                  : "hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 dark:hover:from-gray-950/50 dark:hover:to-slate-950/50"
+              }`}
+            >
+              <Settings className="mr-3 h-5 w-5 transition-transform group-hover:scale-110" />
+              Configurações
+            </Button>
+          </Link>
         </nav>
 
         <div className="absolute bottom-6 left-4 right-4">

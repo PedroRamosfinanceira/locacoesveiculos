@@ -19,6 +19,7 @@ import Maintenance from "./pages/Maintenance";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import AIPredictions from "./pages/AIPredictions";
+import ProposalPage from "./pages/ProposalPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,12 +54,15 @@ const App = () => (
             <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
             <Route path="/vehicles/new" element={<ProtectedRoute><VehicleInvestmentWizard /></ProtectedRoute>} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/proposals" element={<ProtectedRoute><ProposalPage /></ProtectedRoute>} />
             <Route path="/contracts" element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
-            <Route path="/financial" element={<ProtectedRoute><Financial /></ProtectedRoute>} />
-            <Route path="/roi" element={<ProtectedRoute><ROI /></ProtectedRoute>} />
             <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
-            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-            <Route path="/ai-predictions" element={<ProtectedRoute><AIPredictions /></ProtectedRoute>} />
+            
+            {/* Administrative routes - require admin role */}
+            <Route path="/financial" element={<ProtectedRoute requireAdmin><Financial /></ProtectedRoute>} />
+            <Route path="/roi" element={<ProtectedRoute requireAdmin><ROI /></ProtectedRoute>} />
+            <Route path="/ai-predictions" element={<ProtectedRoute requireAdmin><AIPredictions /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute requireAdmin><Reports /></ProtectedRoute>} />
             
             {/* Settings requires admin */}
             <Route path="/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />

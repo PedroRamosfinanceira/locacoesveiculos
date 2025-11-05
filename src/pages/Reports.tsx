@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { Button } from "@/components/ui/button";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell } from "recharts";
 import { useAuth } from "@/contexts/AuthContext";
-import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Download, FileText, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 
 const Reports = () => {
   const { profile } = useAuth();
@@ -42,6 +43,7 @@ const Reports = () => {
   };
 
   // DRE (Demonstração de Resultado)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dreData = transactions.reduce((acc: any, tx: any) => {
     const month = new Date(tx.due_date).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
     if (!acc[month]) {
@@ -66,10 +68,12 @@ const Reports = () => {
   next90Days.setDate(today.getDate() + 90);
 
   const cashFlowData = transactions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((tx: any) => {
       const dueDate = new Date(tx.due_date);
       return dueDate >= today && dueDate <= next90Days;
     })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .reduce((acc: any, tx: any) => {
       const date = new Date(tx.due_date).toLocaleDateString("pt-BR", { month: "short", day: "numeric" });
       if (!acc[date]) {
@@ -83,13 +87,16 @@ const Reports = () => {
       return acc;
     }, {});
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cashFlowChartData = Object.values(cashFlowData).map((item: any, index, arr) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const prevSaldo = index > 0 ? (arr[index - 1] as any).saldo : 0;
     item.saldo = prevSaldo + item.receitas - item.despesas;
     return item;
   });
 
   // Rentabilidade por Veículo
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profitabilityData = roiData.map((vehicle: any) => ({
     name: `${vehicle.plate}`,
     lucro: vehicle.lucro_mensal || 0,
@@ -98,16 +105,32 @@ const Reports = () => {
   }));
 
   // Totalizadores DRE
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const totalReceitas = (dreChartData as any[]).reduce((sum: number, item: any) => sum + (item.receitas || 0), 0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const totalDespesas = (dreChartData as any[]).reduce((sum: number, item: any) => sum + (item.despesas || 0), 0);
   const totalLucro = totalReceitas - totalDespesas;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Relatórios Avançados</h1>
-          <p className="text-muted-foreground">Análises financeiras e projeções</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Relatórios Gerenciais</h1>
+            <CardDescription className="mt-2">
+              Análise financeira completa com demonstrativos, projeções e indicadores de desempenho
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Exportar PDF
+            </Button>
+            <Button variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar Excel
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="dre" className="space-y-4">
@@ -192,15 +215,16 @@ const Reports = () => {
               </CardContent>
             </Card>
 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {cashFlowChartData.some((item: any) => item.saldo < 0) && (
               <Card className="border-destructive">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2 text-destructive">
                     <TrendingDown className="h-5 w-5" />
-                    <span className="font-semibold">⚠️ Alerta: Saldo projetado negativo detectado!</span>
+                    <span className="font-semibold">ATENÇÃO: Saldo projetado negativo detectado</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Há períodos com saldo negativo nos próximos 90 dias. Considere ajustar seu fluxo de caixa.
+                    Identificados períodos com saldo negativo nos próximos 90 dias. Recomenda-se revisão imediata do planejamento financeiro e ajustes no fluxo de caixa.
                   </p>
                 </CardContent>
               </Card>
@@ -252,6 +276,7 @@ const Reports = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {profitabilityData.map((vehicle: any, index: number) => (
                       <div key={index} className="flex items-center justify-between border-b pb-2">
                         <div>

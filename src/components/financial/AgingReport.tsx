@@ -100,6 +100,7 @@ export const AgingReport = () => {
     acc[item.client_id].max_criticality = Math.max(acc[item.client_id].max_criticality, item.criticality);
     acc[item.client_id].transactions.push(item);
     return acc;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }, {} as Record<string, any>);
 
   if (isLoading) {
@@ -129,6 +130,7 @@ export const AgingReport = () => {
       </div>
 
       <div className="space-y-4">
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {Object.entries(groupedData).map(([clientId, data]: [string, any]) => (
           <Card key={clientId}>
             <CardHeader>
@@ -184,7 +186,7 @@ export const AgingReport = () => {
         {Object.keys(groupedData).length === 0 && (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              Nenhuma inadimplência encontrada 🎉
+              Nenhuma inadimplência encontrada
             </CardContent>
           </Card>
         )}
