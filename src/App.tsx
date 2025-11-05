@@ -16,6 +16,7 @@ import VehicleDetails from "./pages/VehicleDetails";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
 import Contracts from "./pages/Contracts";
+import ContractDetails from "./pages/ContractDetails";
 import Financial from "./pages/Financial";
 import ROI from "./pages/ROI";
 import Maintenance from "./pages/Maintenance";
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/clients/:id" element={<ProtectedRoute><ClientDetails /></ProtectedRoute>} />
             <Route path="/proposals" element={<ProtectedRoute><ProposalPage /></ProtectedRoute>} />
             <Route path="/contracts" element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
+            <Route path="/contracts/:id" element={<ProtectedRoute><ContractDetails /></ProtectedRoute>} />
             <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
             
             {/* Administrative routes - require admin role */}

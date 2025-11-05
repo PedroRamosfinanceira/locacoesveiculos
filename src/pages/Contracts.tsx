@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useContracts, useCreateContract, useAvailableVehicles } from '@/hooks/useContracts';
+import { useClients } from '@/hooks/useClients';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +12,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { FileText, Plus, Calendar, DollarSign } from 'lucide-react';
+import { FileText, Plus, Calendar, DollarSign, Eye } from 'lucide-react';
 
 export default function Contracts() {
-  const { tenantId, hasPermission } = useAuth();
+  const navigate = useNavigate();
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,80 +27,10 @@ export default function Contracts() {
     monthly_value: 0,
   });
 
-  const { data: contracts, isLoading } = useQuery({
-    queryKey: ['contracts', tenantId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('locacoes_veicular_contracts')
-        .select(`
-          *,
-          client:locacoes_veicular_clients(name),
-          vehicle:locacoes_veicular_vehicles(brand, model, plate)
-        `)
-        .eq('tenant_id', tenantId)
-        .order('start_date', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenantId,
-  });
-
-  const { data: availableVehicles } = useQuery({
-    queryKey: ['available-vehicles', tenantId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('locacoes_veicular_vehicles')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('status', 'disponivel');
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenantId && isDialogOpen,
-  });
-
-  const { data: clients } = useQuery({
-    queryKey: ['clients', tenantId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('locacoes_veicular_clients')
-        .select('*')
-        .eq('tenant_id', tenantId);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenantId && isDialogOpen,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { data: result, error } = await supabase.rpc(
-        'locacoes_veicular_contract_create',
-        {
-          p_client_id: data.client_id,
-          p_vehicle_id: data.vehicle_id,
-          p_start_date: data.start_date,
-          p_months: data.months,
-          p_monthly_value: data.monthly_value,
-        }
-      );
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['available-vehicles'] });
-      toast.success('Contrato criado com sucesso');
-      setIsDialogOpen(false);
-      resetForm();
-    },
-    onError: (error) => {
-      toast.error('Erro ao criar contrato: ' + error.message);
-    },
-  });
+  const { data: contracts, isLoading } = useContracts();
+  const { data: availableVehicles } = useAvailableVehicles();
+  const { data: clients } = useClients();
+  const createMutation = useCreateContract();
 
   const resetForm = () => {
     setFormData({
@@ -278,6 +211,16 @@ export default function Contracts() {
                         }).format((contract.monthly_value || 0) * contract.months)}
                       </p>
                     </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => navigate(`/contracts/${contract.id}`)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Ver Detalhes e Parcelas
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
