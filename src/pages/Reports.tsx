@@ -10,7 +10,7 @@ import { AgingReport } from "@/components/financial/AgingReport";
 
 const Reports = () => {
   const { dre, isLoading } = useReports();
-  const { data: roiData = [] } = useROI();
+  const { data: roiData = [] } = useROI({ limit: 100 });
   const { data: cashFlowData = [] } = useCashFlowProjection(90);
 
   const formatCurrency = (value: number) => {

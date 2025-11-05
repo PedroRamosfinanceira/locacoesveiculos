@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { useVehicles, useCreateVehicle, useUpdateVehicle, useDeleteVehicle, Vehicle, VehicleFormData } from '@/hooks/useVehicles';
+import { useVehicles, useCreateVehicle, useUpdateVehicle, useDeleteVehicle, VehicleFormData } from '@/hooks/useVehicles';
+import type { Vehicle } from '@/hooks/useVehicles';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,9 +70,6 @@ export default function Vehicles() {
   });
 
   const { data: vehicles, isLoading } = useVehicles(sortBy);
-  const createMutation = useCreateVehicle();
-  const updateMutation = useUpdateVehicle();
-  const deleteMutation = useDeleteVehicle();
   const createMutation = useCreateVehicle();
   const updateMutation = useUpdateVehicle();
   const deleteMutation = useDeleteVehicle();
