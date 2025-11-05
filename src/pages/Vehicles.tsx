@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useVehicles, useCreateVehicle, useUpdateVehicle, useDeleteVehicle, Vehicle, VehicleFormData } from '@/hooks/useVehicles';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Car } from 'lucide-react';
+import { Plus, Car, Eye } from 'lucide-react';
 import { SortDropdown } from '@/components/common/SortDropdown';
 import { SearchDropdown } from '@/components/common/SearchDropdown';
 import { ActionButtons } from '@/components/common/ActionButtons';
@@ -45,7 +45,7 @@ const sortOptions = [
 
 export default function Vehicles() {
   const navigate = useNavigate();
-  const { tenantId, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -68,79 +68,13 @@ export default function Vehicles() {
     valor_aquisicao_sem_encargos: 0,
   });
 
-  const { data: vehicles, isLoading } = useQuery({
-    queryKey: ['vehicles', tenantId, sortBy],
-    queryFn: async () => {
-      const [field, direction] = sortBy.split('_');
-      const { data, error } = await supabase
-        .from('locacoes_veicular_vehicles')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order(field, { ascending: direction === 'asc' });
-      
-      if (error) throw error;
-      return data as Vehicle[];
-    },
-    enabled: !!tenantId,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const { error } = await supabase
-        .from('locacoes_veicular_vehicles')
-        .insert([{ ...data, tenant_id: tenantId }]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-      toast.success('Veículo cadastrado com sucesso');
-      setDialogOpen(false);
-      resetForm();
-    },
-    onError: (error) => {
-      console.error('Error creating vehicle:', error);
-      toast.error('Erro ao cadastrar veículo');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
-      const { error } = await supabase
-        .from('locacoes_veicular_vehicles')
-        .update(data)
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-      toast.success('Veículo atualizado com sucesso');
-      setDialogOpen(false);
-      setEditingVehicle(null);
-      resetForm();
-    },
-    onError: (error) => {
-      console.error('Error updating vehicle:', error);
-      toast.error('Erro ao atualizar veículo');
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('locacoes_veicular_vehicles')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-      toast.success('Veículo excluído com sucesso');
-    },
-    onError: (error) => {
-      console.error('Error deleting vehicle:', error);
-      toast.error('Erro ao excluir veículo');
-    },
-  });
+  const { data: vehicles, isLoading } = useVehicles(sortBy);
+  const createMutation = useCreateVehicle();
+  const updateMutation = useUpdateVehicle();
+  const deleteMutation = useDeleteVehicle();
+  const createMutation = useCreateVehicle();
+  const updateMutation = useUpdateVehicle();
+  const deleteMutation = useDeleteVehicle();
 
   const resetForm = () => {
     setFormData({
@@ -158,9 +92,20 @@ export default function Vehicles() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingVehicle) {
-      updateMutation.mutate({ id: editingVehicle.id, data: formData });
+      updateMutation.mutate({ id: editingVehicle.id, data: formData }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setEditingVehicle(null);
+          resetForm();
+        }
+      });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(formData, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          resetForm();
+        }
+      });
     }
   };
 
@@ -299,6 +244,15 @@ export default function Vehicles() {
                           </p>
                         </div>
                         <div className="pt-4 space-y-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => navigate(`/vehicles/${vehicle.id}`)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ver Detalhes
+                          </Button>
                           <ActionButtons
                             onView={() => handleView(vehicle)}
                             onEdit={() => handleEdit(vehicle)}

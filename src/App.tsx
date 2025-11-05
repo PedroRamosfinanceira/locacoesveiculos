@@ -12,6 +12,7 @@ import { DashboardPage as DashboardNew } from "./pages/DashboardNew";
 import SaaSDashboard from "./pages/SaaSDashboard";
 import Vehicles from "./pages/Vehicles";
 import VehicleInvestmentWizard from "./pages/VehicleInvestmentWizard";
+import VehicleDetails from "./pages/VehicleDetails";
 import Clients from "./pages/Clients";
 import Contracts from "./pages/Contracts";
 import Financial from "./pages/Financial";
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/dashboard-new" element={<ProtectedRoute><DashboardNew /></ProtectedRoute>} />
             <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
             <Route path="/vehicles/new" element={<ProtectedRoute><VehicleInvestmentWizard /></ProtectedRoute>} />
+            <Route path="/vehicles/:id" element={<ProtectedRoute><VehicleDetails /></ProtectedRoute>} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/proposals" element={<ProtectedRoute><ProposalPage /></ProtectedRoute>} />
             <Route path="/contracts" element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
