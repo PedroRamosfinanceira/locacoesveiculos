@@ -259,16 +259,16 @@ export default function VehicleDetails() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <p className="font-semibold">
-                            {contract.client?.name || 'Cliente não encontrado'}
+                            {(contract as any).client?.name || 'Cliente não encontrado'}
                           </p>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {formatDate(contract.start_date)} - {formatDate(contract.end_date)}
+                              {formatDate(contract.start_date)} - {formatDate((contract as any).end_date || contract.start_date)}
                             </span>
                             <span className="flex items-center gap-1">
                               <DollarSign className="h-3 w-3" />
-                              {formatCurrency(contract.valor_total)}
+                              {formatCurrency((contract as any).valor_total || contract.total || 0)}
                             </span>
                           </div>
                         </div>
@@ -306,18 +306,18 @@ export default function VehicleDetails() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {formatDate(maintenance.date)}
+                              {formatDate((maintenance as any).date)}
                             </span>
-                            {maintenance.km && (
+                            {(maintenance as any).km && (
                               <span className="flex items-center gap-1">
                                 <Gauge className="h-3 w-3" />
-                                {maintenance.km.toLocaleString('pt-BR')} km
+                                {(maintenance as any).km.toLocaleString('pt-BR')} km
                               </span>
                             )}
-                            {maintenance.workshop && (
+                            {(maintenance as any).workshop && (
                               <span className="flex items-center gap-1">
                                 <MapPin className="h-3 w-3" />
-                                {maintenance.workshop}
+                                {(maintenance as any).workshop}
                               </span>
                             )}
                           </div>
@@ -364,10 +364,10 @@ export default function VehicleDetails() {
                               <Calendar className="h-3 w-3" />
                               Venc: {formatDate(expense.due_date)}
                             </span>
-                            {expense.payment_date && (
+                            {(expense as any).payment_date && (
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                Pago: {formatDate(expense.payment_date)}
+                                Pago: {formatDate((expense as any).payment_date)}
                               </span>
                             )}
                           </div>

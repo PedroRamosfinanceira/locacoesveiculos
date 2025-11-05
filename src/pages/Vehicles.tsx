@@ -115,7 +115,7 @@ export default function Vehicles() {
       plate: vehicle.plate,
       year: vehicle.year,
       color: vehicle.color,
-      category: vehicle.category as any,
+      category: vehicle.category as string,
       status: vehicle.status,
       valor_aquisicao_sem_encargos: vehicle.valor_aquisicao_sem_encargos,
     });
@@ -399,7 +399,7 @@ export default function Vehicles() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Categoria</Label>
-                  <Select value={formData.category} onValueChange={(value: any) => setFormData({ ...formData, category: value })}>
+                  <Select value={formData.category} onValueChange={(value: string) => setFormData({ ...formData, category: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

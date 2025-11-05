@@ -7,7 +7,7 @@ export interface Client {
   id: string;
   tenant_id: string;
   name: string;
-  cpf_cnpj: string;
+  document: string; // CPF ou CNPJ (nome da coluna no banco)
   email?: string;
   phone?: string;
   address?: string;

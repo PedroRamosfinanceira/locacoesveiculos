@@ -19,13 +19,11 @@ import { ViewDialog } from '@/components/common/ViewDialog';
 import { generateClientPDF } from '@/lib/pdfGenerator';
 import { sendClientWhatsApp } from '@/lib/whatsappHelper';
 
-interface Client {
-  id: string;
+interface ClientFormData {
   name: string;
   email: string;
   phone: string;
   document: string;
-  created_at: string;
 }
 
 const sortOptions = [
@@ -48,7 +46,7 @@ export default function Clients() {
   
   const [formData, setFormData] = useState({
     name: '',
-    cpf_cnpj: '',
+    document: '',
     email: '',
     phone: '',
   });
@@ -61,7 +59,7 @@ export default function Clients() {
   const resetForm = () => {
     setFormData({
       name: '',
-      cpf_cnpj: '',
+      document: '',
       email: '',
       phone: '',
     });
@@ -91,7 +89,7 @@ export default function Clients() {
     setEditingClient(client);
     setFormData({
       name: client.name,
-      cpf_cnpj: client.cpf_cnpj,
+      document: client.document,
       email: client.email || '',
       phone: client.phone || '',
     });
@@ -113,7 +111,7 @@ export default function Clients() {
     if (!viewingClient) return {};
     return {
       Nome: viewingClient.name,
-      'CPF/CNPJ': viewingClient.cpf_cnpj,
+      'CPF/CNPJ': viewingClient.document,
       Email: viewingClient.email || '-',
       Telefone: viewingClient.phone || '-',
       'Criado em': new Date(viewingClient.created_at).toLocaleDateString('pt-BR'),
@@ -131,13 +129,13 @@ export default function Clients() {
           <div className="flex gap-2">
             <SearchDropdown
               items={clients || []}
-              searchFields={['name', 'email', 'cpf_cnpj']}
+              searchFields={['name', 'email', 'document']}
               onSelect={handleView}
               placeholder="Buscar cliente..."
               renderItem={(client) => (
                 <div>
                   <div className="font-medium">{client.name}</div>
-                  <div className="text-sm text-muted-foreground">{client.cpf_cnpj}</div>
+                  <div className="text-sm text-muted-foreground">{client.document}</div>
                 </div>
               )}
             />
@@ -169,7 +167,7 @@ export default function Clients() {
                   <div className="space-y-1 text-sm">
                     <div>
                       <p className="text-muted-foreground">CPF/CNPJ</p>
-                      <p className="font-medium">{client.cpf_cnpj}</p>
+                      <p className="font-medium">{client.document}</p>
                     </div>
                     {client.email && (
                       <div>
@@ -251,11 +249,11 @@ export default function Clients() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cpf_cnpj">CPF/CNPJ</Label>
+                <Label htmlFor="document">CPF/CNPJ</Label>
                 <Input
-                  id="cpf_cnpj"
-                  value={formData.cpf_cnpj}
-                  onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })}
+                  id="document"
+                  value={formData.document}
+                  onChange={(e) => setFormData({ ...formData, document: e.target.value })}
                   required
                 />
               </div>
@@ -285,3 +283,4 @@ export default function Clients() {
     </DashboardLayout>
   );
 }
+
