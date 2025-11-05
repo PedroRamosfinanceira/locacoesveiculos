@@ -1,114 +1,41 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useReports, useCashFlowProjection } from "@/hooks/useReports";
+import { useROI } from "@/hooks/useROI";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell } from "recharts";
-import { useAuth } from "@/contexts/AuthContext";
-import { TrendingUp, TrendingDown, DollarSign, Download, FileText, BarChart3, PieChart as PieChartIcon } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { TrendingUp, TrendingDown, DollarSign, Download, FileText, BarChart3 } from "lucide-react";
+import { AgingReport } from "@/components/financial/AgingReport";
 
 const Reports = () => {
-  const { profile } = useAuth();
-
-  const { data: transactions = [] } = useQuery({
-    queryKey: ["all-transactions", profile?.tenant_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("locacoes_veicular_transactions")
-        .select("*")
-        .order("due_date", { ascending: true });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.tenant_id,
-  });
-
-  const { data: roiData = [] } = useQuery({
-    queryKey: ["roi-frota", profile?.tenant_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("locacoes_veicular_v_roi_frota")
-        .select("*");
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.tenant_id,
-  });
+  const { dre, isLoading } = useReports();
+  const { data: roiData = [] } = useROI();
+  const { data: cashFlowData = [] } = useCashFlowProjection(90);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   };
 
-  // DRE (Demonstração de Resultado)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dreData = transactions.reduce((acc: any, tx: any) => {
-    const month = new Date(tx.due_date).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
-    if (!acc[month]) {
-      acc[month] = { month, receitas: 0, despesas: 0, lucro: 0 };
-    }
-    if (tx.status === "pago") {
-      if (tx.type === "receita") {
-        acc[month].receitas += tx.amount;
-      } else {
-        acc[month].despesas += tx.amount;
-      }
-      acc[month].lucro = acc[month].receitas - acc[month].despesas;
-    }
-    return acc;
-  }, {});
+  const formatPercent = (value: number) => {
+    return `${(value * 100).toFixed(1)}%`;
+  };
 
-  const dreChartData = Object.values(dreData).slice(-6);
-
-  // Fluxo de Caixa Projetado (próximos 90 dias)
-  const today = new Date();
-  const next90Days = new Date(today);
-  next90Days.setDate(today.getDate() + 90);
-
-  const cashFlowData = transactions
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .filter((tx: any) => {
-      const dueDate = new Date(tx.due_date);
-      return dueDate >= today && dueDate <= next90Days;
-    })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .reduce((acc: any, tx: any) => {
-      const date = new Date(tx.due_date).toLocaleDateString("pt-BR", { month: "short", day: "numeric" });
-      if (!acc[date]) {
-        acc[date] = { date, receitas: 0, despesas: 0, saldo: 0 };
-      }
-      if (tx.type === "receita") {
-        acc[date].receitas += tx.amount;
-      } else {
-        acc[date].despesas += tx.amount;
-      }
-      return acc;
-    }, {});
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cashFlowChartData = Object.values(cashFlowData).map((item: any, index, arr) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const prevSaldo = index > 0 ? (arr[index - 1] as any).saldo : 0;
-    item.saldo = prevSaldo + item.receitas - item.despesas;
-    return item;
-  });
+  // DRE já vem do hook
+  const dreChartData = dre.data || [];
 
   // Rentabilidade por Veículo
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const profitabilityData = roiData.map((vehicle: any) => ({
-    name: `${vehicle.plate}`,
-    lucro: vehicle.lucro_mensal || 0,
+  const profitabilityData = roiData.map((vehicle) => ({
+    name: `${vehicle.placa || 'S/P'}`,
     receitas: vehicle.receitas_mes || 0,
     despesas: vehicle.despesas_mes || 0,
+    lucro: vehicle.lucro_mensal || 0,
+    roi: vehicle.roi_anual_pct || 0,
   }));
 
   // Totalizadores DRE
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const totalReceitas = (dreChartData as any[]).reduce((sum: number, item: any) => sum + (item.receitas || 0), 0);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const totalDespesas = (dreChartData as any[]).reduce((sum: number, item: any) => sum + (item.despesas || 0), 0);
+  const totalReceitas = dreChartData.reduce((sum: number, item) => sum + (item.receitas || 0), 0);
+  const totalDespesas = dreChartData.reduce((sum: number, item) => sum + (item.despesas || 0), 0);
   const totalLucro = totalReceitas - totalDespesas;
 
   return (
@@ -138,6 +65,7 @@ const Reports = () => {
             <TabsTrigger value="dre">DRE</TabsTrigger>
             <TabsTrigger value="fluxo">Fluxo de Caixa</TabsTrigger>
             <TabsTrigger value="rentabilidade">Rentabilidade</TabsTrigger>
+            <TabsTrigger value="aging">Inadimplência</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dre" className="space-y-4">
@@ -201,7 +129,7 @@ const Reports = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
-                  <AreaChart data={cashFlowChartData}>
+                  <AreaChart data={cashFlowData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -215,8 +143,7 @@ const Reports = () => {
               </CardContent>
             </Card>
 
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {cashFlowChartData.some((item: any) => item.saldo < 0) && (
+            {cashFlowData.some((item) => item.saldo < 0) && (
               <Card className="border-destructive">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2 text-destructive">
@@ -276,8 +203,7 @@ const Reports = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {profitabilityData.map((vehicle: any, index: number) => (
+                    {profitabilityData.map((vehicle, index: number) => (
                       <div key={index} className="flex items-center justify-between border-b pb-2">
                         <div>
                           <p className="font-medium">{vehicle.name}</p>
@@ -294,6 +220,10 @@ const Reports = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="aging" className="space-y-4">
+            <AgingReport />
           </TabsContent>
         </Tabs>
       </div>
