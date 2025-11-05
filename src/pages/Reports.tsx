@@ -1,5 +1,6 @@
 import { useReports, useCashFlowProjection } from "@/hooks/useReports";
 import { useROI } from "@/hooks/useROI";
+import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,8 +10,9 @@ import { TrendingUp, TrendingDown, DollarSign, Download, FileText, BarChart3 } f
 import { AgingReport } from "@/components/financial/AgingReport";
 
 const Reports = () => {
+  const { tenantId } = useAuth();
   const { dre, isLoading } = useReports();
-  const { data: roiData = [] } = useROI({ limit: 100 });
+  const { data: roiData = [] } = useROI(tenantId);
   const { data: cashFlowData = [] } = useCashFlowProjection(90);
 
   const formatCurrency = (value: number) => {
@@ -26,11 +28,13 @@ const Reports = () => {
 
   // Rentabilidade por Veículo
   const profitabilityData = roiData.map((vehicle) => ({
-    name: `${vehicle.placa || 'S/P'}`,
+    name: `${vehicle.plate || 'S/P'}`,
     receitas: vehicle.receitas_mes || 0,
     despesas: vehicle.despesas_mes || 0,
     lucro: vehicle.lucro_mensal || 0,
-    roi: vehicle.roi_anual_pct || 0,
+    roi: vehicle.lucro_mensal && vehicle.investimento_inicial 
+      ? (vehicle.lucro_mensal * 12 / vehicle.investimento_inicial) * 100 
+      : 0,
   }));
 
   // Totalizadores DRE

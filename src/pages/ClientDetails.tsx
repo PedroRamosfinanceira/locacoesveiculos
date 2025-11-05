@@ -99,7 +99,7 @@ export default function ClientDetails() {
             <div>
               <h1 className="text-3xl font-bold">{client.name}</h1>
               <p className="text-muted-foreground">
-                {client.is_legal_entity ? 'Pessoa Jurídica' : 'Pessoa Física'} • {formatCPFCNPJ(client.cpf_cnpj)}
+                {client.is_legal_entity ? 'Pessoa Jurídica' : 'Pessoa Física'} • {formatCPFCNPJ(client.document)}
               </p>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function ClientDetails() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">CPF/CNPJ</p>
-                  <p className="font-medium">{formatCPFCNPJ(client.cpf_cnpj)}</p>
+                  <p className="font-medium">{formatCPFCNPJ(client.document)}</p>
                 </div>
                 {client.rg && (
                   <div>

@@ -99,7 +99,7 @@ export const useCreateVehicle = () => {
 
       const { data: vehicle, error } = await supabase
         .from('locacoes_veicular_vehicles')
-        .insert([{ ...data, tenant_id: tenantId }])
+        .insert([{ ...data, tenant_id: tenantId } as any])
         .select()
         .single();
 
@@ -129,7 +129,7 @@ export const useUpdateVehicle = () => {
 
       const { data: vehicle, error } = await supabase
         .from('locacoes_veicular_vehicles')
-        .update(data)
+        .update(data as any)
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select()

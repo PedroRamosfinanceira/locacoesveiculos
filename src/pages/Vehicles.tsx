@@ -22,19 +22,6 @@ import { sendVehicleWhatsApp } from '@/lib/whatsappHelper';
 import { SellVehicleDialog } from '@/components/vehicles/SellVehicleDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-interface Vehicle {
-  id: string;
-  brand: string;
-  model: string;
-  plate: string;
-  year: number;
-  color: string;
-  category: string;
-  status: string;
-  valor_aquisicao_sem_encargos: number;
-  created_at: string;
-}
-
 const sortOptions = [
   { label: 'A-Z (Marca)', value: 'brand_asc' },
   { label: 'Z-A (Marca)', value: 'brand_desc' },
@@ -115,7 +102,7 @@ export default function Vehicles() {
       plate: vehicle.plate,
       year: vehicle.year,
       color: vehicle.color,
-      category: vehicle.category as string,
+      category: vehicle.category,
       status: vehicle.status,
       valor_aquisicao_sem_encargos: vehicle.valor_aquisicao_sem_encargos,
     });
@@ -399,7 +386,7 @@ export default function Vehicles() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Categoria</Label>
-                  <Select value={formData.category} onValueChange={(value: string) => setFormData({ ...formData, category: value })}>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as any })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

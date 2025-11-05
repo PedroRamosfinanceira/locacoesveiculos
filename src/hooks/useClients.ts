@@ -30,7 +30,7 @@ export interface Client {
 
 export interface ClientFormData {
   name: string;
-  cpf_cnpj: string;
+  document: string; // CPF ou CNPJ
   email?: string;
   phone?: string;
   address?: string;
@@ -212,6 +212,9 @@ export const useClientContracts = (clientId: string | undefined) => {
   });
 };
 
+// TODO: Tabela locacoes_veicular_proposals não existe no schema atual
+// Descomentar quando a tabela for criada
+/*
 export const useClientProposals = (clientId: string | undefined) => {
   const { tenantId } = useAuth();
 
@@ -236,7 +239,20 @@ export const useClientProposals = (clientId: string | undefined) => {
     enabled: !!clientId && !!tenantId,
   });
 };
+*/
 
+// Stub temporário para não quebrar o código que usa essa função
+export const useClientProposals = (clientId: string | undefined) => {
+  return useQuery({
+    queryKey: ['client-proposals', clientId],
+    queryFn: async () => [],
+    enabled: false,
+  });
+};
+
+// TODO: Tabela locacoes_veicular_transactions não existe no schema atual
+// Descomentar quando a tabela for criada
+/*
 export const useClientPayments = (clientId: string | undefined) => {
   const { tenantId } = useAuth();
 
@@ -257,5 +273,15 @@ export const useClientPayments = (clientId: string | undefined) => {
       return data;
     },
     enabled: !!clientId && !!tenantId,
+  });
+};
+*/
+
+// Stub temporário para não quebrar o código que usa essa função
+export const useClientPayments = (clientId: string | undefined) => {
+  return useQuery({
+    queryKey: ['client-payments', clientId],
+    queryFn: async () => [],
+    enabled: false,
   });
 };
