@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import { DashboardPage as DashboardNew } from "./pages/DashboardNew";
 import SaaSDashboard from "./pages/SaaSDashboard";
 import Vehicles from "./pages/Vehicles";
 import VehicleInvestmentWizard from "./pages/VehicleInvestmentWizard";
@@ -51,6 +52,7 @@ const App = () => (
             
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard-new" element={<ProtectedRoute><DashboardNew /></ProtectedRoute>} />
             <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
             <Route path="/vehicles/new" element={<ProtectedRoute><VehicleInvestmentWizard /></ProtectedRoute>} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />

@@ -66,13 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Usar is_saas_admin direto do profile
         setIsSaasAdmin(data.is_saas_admin || false);
 
-        // Verificar role direto do profile (não precisa RPC)
-        const role = data.role || 'user';
-        setIsAdmin(role === 'admin' || role === 'owner');
-
-        // Buscar permissões granulares do usuário
+        // 🔐 SEGURANÇA: Buscar role da tabela locacoes_veicular_user_roles (SEGURO)
+        // NÃO usar profile.role (pode ser manipulado pelo usuário)
         if (data.tenant_id) {
-          // Fetch permissions from table not yet in generated types
+          const { data: roleData } = await supabase
+            .from('locacoes_veicular_user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .eq('tenant_id', data.tenant_id)
+            .maybeSingle();
+
+          const role = roleData?.role || 'user';
+          setIsAdmin(role === 'admin');
+
+          // Buscar permissões granulares do usuário
           const { data: permsData } = await supabase
             .from('locacoes_veicular_user_permissions' as any)
             .select('permission')
